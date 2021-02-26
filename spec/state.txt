@@ -1,0 +1,78 @@
+How the internal state of a terminal buffer is stored
+
+The state should be stored in a Lua table with the following keys:
+
+state = {
+    name     : string,
+    initial = {
+        position : string,
+        cmd      : string,
+    },
+    current = {
+        position : string,
+        cmd      : string,
+    },
+    id       : integer,
+    bufname  : string,
+    bufnr    : integer,
+    window   : integer,
+    tab      : integer,
+    alive    : boolean,
+}
+
+name:
+    The name given by the user as a reference to a specific terminal.
+
+initial.position:
+    The position it should be spawned with.
+    One of : current, left, right, above, below, lhs, rhs, top, bot, tab, float
+
+    current:
+        Same window as cursor currently is in.
+    left:
+        spawn a window directly to the left of the window the cursor is in.
+    right:
+        spawn a window directly to the right of the window the cursor is in.
+    above:
+        spawn a window directly above the window the cursor is in.
+    below:
+        spawn a window directly below the window the cursor is in.
+    lhs:
+        spawn a window at the left side of the viewport the cursor is in.
+    rhs:
+        spawn a window at the right side of the viewport the cursor is in.
+    top:
+        spawn a window at the top of the viewport the cursor is in.
+    bot:
+        spawn a window at the bottom of the viewport the cursor is in.
+    tab:
+        spawn a window in a separate tab.
+    float:
+        spawn a window on top of the current viewport.
+
+inital.cmd:
+    The command passed to the terminal as an argument.
+
+current.position:
+    The position it currently has.
+
+current.cmd:
+    The last run command in the terminal.
+
+id:
+    The id given the terminal by Neovim
+
+bufname:
+    The actual name of the terminal buffer.
+
+bufnr:
+    The bufnr of the terminal if it exists.
+
+window:
+    The window where the buffer is currently located.
+
+tab:
+    The tab where the buffer is currently located.
+
+alive:
+    Whether or not the terminal is alive, aka. in buffer-list.

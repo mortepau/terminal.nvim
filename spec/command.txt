@@ -1,0 +1,188 @@
+How the commands work and their behaviour
+
+Possible scenarios:
+    1. Buffer is shown.       - State = (tab, window, buf)
+    2. Buffer is hidden.      - State = (buf)
+    3. Buffer does not exist. - State = ()
+
+Name: Terminal
+
+Syntax: Terminal[!] [[name=]name] [[position=]position] [cmd]
+
+Note:
+ - Default terminal will be used instead of last terminal if no terminal has been used yet.
+
+Terminal:
+    scenario 1: Go to last.
+    scenario 2: Open last using its previous position.
+    scenario 3: Open last/default using its previous/initial position and run its initial command
+
+Terminal!:
+    scenario 1: Close last (scenario 3)
+    scenario 2: Close last (scenario 3)
+    scenario 3: Open last/default using its initial position and run its initial command.
+
+Terminal name:
+    scenario 1: Go to <name>.
+    scenario 2: Open <name> using its previous position
+    scenario 3: Open <name> using its previous position and run its initial command.
+
+Terminal! name:
+    scenario 1: Close <name> (scenario 3)
+    scenario 2: Close <name> (scenario 3)
+    scenario 3: Open <name> using its initial position and run its initial command.
+
+Terminal name position:
+    scenario 1: Move <name> to <position>
+    scenario 2: Open <name> using <position>
+    scenario 3: Open <name> using <position> and run its initial command.
+
+Terminal! name position:
+    scenario 1: Close it (scenario 3)
+    scenario 2: Close it (scenario 3)
+    scenario 3: Open <name> using <position> and run its initial command.
+
+Terminal name cmd:
+    scenario 1: Go to <name> and echo in <cmd>
+    scenario 2: Open <name> using its last position and echo in <cmd>
+    scenario 3: Open <name> using its initial position and run <cmd>
+
+Terminal! name cmd:
+    scenario 1: Close <name> (scenario 3)
+    scenario 2: Close <name> (scenario 3)
+    scenario 3: Open <name> using its initial position and run <cmd>
+
+Terminal name position cmd:
+    scenario 1: Move <name> to <position> and echo in <cmd>
+    scenario 2: Open <name> using <position> and echo in <cmd>
+    scenario 3: Open <name> using <position> and run <cmd>
+
+Terminal! name position cmd:
+    scenario 1: Close <name> (scenario 3)
+    scenario 2: Close <name> (scenario 3)
+    scenario 3: Open <name> using <position> and run <cmd>
+
+Terminal position:
+    scenario 1: Move last to <position>.
+    scenario 2: Open last using <position>
+    scenario 3: Open last using <position> and run its initial command.
+
+Terminal! position:
+    scenario 1: Close it (scenario 3)
+    scenario 2: Close it (scenario 3)
+    scenario 3: Open last/default using <position> and run its initial command.
+
+Terminal position cmd:
+    scenario 1: Move last to <position> and echo in <cmd>.
+    scenario 2: Open last using <position> and echo in <cmd>.
+    scenario 3: Open last/default using <position> and run <cmd>.
+
+Terminal! position cmd:
+    scenario 1: Close last (scenario 3)
+    scenario 2: Close last (scenario 3)
+    scenario 3: Open last/default using <position> and run <cmd>.
+
+Terminal cmd:
+    scenario 1: Go to last and echo in <cmd>.
+    scenario 2: Open last using its previous position and echo in <cmd>.
+    scenario 3: Open last/default using its previous/initial position and run <cmd>.
+
+Terminal! cmd:
+    scenario 1: Close last (scenario 3)
+    scenario 2: Close last (scenario 3)
+    scenario 3: Open last/default using its initial position and run <cmd>.
+
+
+
+Name: TermOpen
+
+Syntax: TermOpen [name=]name [cmd]
+
+TermOpen name:
+    scenario 1: Go to <name>.
+    scenario 2: Open <name> in current window.
+    scenario 3: Open <name> in current window.
+
+TermOpen name cmd:
+    scenario 1: Go to <name> and echo in <cmd>.
+    scenario 2: Open <name> in current window and echo in <cmd>.
+    scenario 3: Open <name> in current window and echo in <cmd>.
+
+
+
+Name: TermClose
+
+Syntax: TermClose[!] [[name=]name]
+
+TermClose:
+    scenario 1: Close last window and delete last buffer, error on failure.
+    scenario 2: Delete last buffer, error on failure.
+    scenario 3: Do nothing.
+
+TermClose!:
+    scenario 1: Close last window and delete last buffer, discard content.
+    scenario 2: Delete last buffer, discard content.
+    scenario 3: Do nothing.
+
+TermClose name:
+    scenario 1: Close <name> window and delete <name> buffer, error on failure.
+    scenario 2: Delete <name> buffer, error on failure.
+    scenario 3: Do nothing.
+
+TermClose! name:
+    scenario 1: Close <name> window and delete <name> buffer, discard content.
+    scenario 2: Delete <name> buffer, discard content.
+    scenario 3: Do nothing.
+
+
+
+Name: TermMove
+
+Syntax: TermMove [[name=]name] [[position=]position]
+
+TermMove:
+    scenario 1: Move last to current window.
+    scenario 2: Open last in current window.
+    scenario 3: Do nothing, give error.
+
+TermMove name:
+    scenario 1: Move <name> to current window.
+    scenario 2: Open <name> to current window.
+    scenario 3: Do nothing, give error.
+
+TermMove position:
+    scenario 1: Move last to <position>.
+    scenario 2: Open last using <position>.
+    scenario 3: Do nothing, give error.
+
+TermMove name position:
+    scenario 1: Move <name> to <position>.
+    scenario 2: Open <name> using <position>.
+    scenario 3: Do nothing, give error.
+
+
+
+Name: TermEcho
+
+Syntax: TermEcho[!] [[name=]name] cmd
+
+TermEcho cmd:
+    scenario 1: Echo in <cmd> to last. Stay in current window.
+    scenario 2: Echo in <cmd> to last. Stay in current window.
+    scenario 3: Do nothing, give error.
+
+TermEcho! cmd:
+    scenario 1: Go to last and echo in <cmd>.
+    scenario 2: Open last in current window and echo in <cmd>.
+    scenario 3: Do nothing, give error.
+
+TermEcho name cmd:
+    scenario 1: Echo in <cmd> to <name>. Stay in current window.
+    scenario 2: Echo in <cmd> to <name>. Stay in current window.
+    scenario 3: Do nothing, give error.
+
+TermEcho! name cmd:
+    scenario 1: Go to <name> and echo in <cmd>.
+    scenario 2: Open <name> in current window and echo in <cmd>.
+    scenario 3: Do nothing, give error.
+
