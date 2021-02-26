@@ -1,4 +1,4 @@
-# Terminal.nvim
+# Terminal.nvim [WIP]
 
 A plugin meant to simplify the process of using the builtin terminal in Neovim.
 
