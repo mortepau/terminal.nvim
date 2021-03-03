@@ -7,7 +7,7 @@ Possible scenarios:
 
 Name: Terminal
 
-Syntax: Terminal[!] [[name=]name] [[position=]position] [cmd]
+Syntax: Terminal[!] [name=<name>] [position=<position>] [cwd=<cwd>] [<cmd>]
 
 Note:
  - Default terminal will be used instead of last terminal if no terminal has been used yet.
@@ -96,7 +96,7 @@ Terminal! cmd:
 
 Name: TermOpen
 
-Syntax: TermOpen [name=]name [cmd]
+Syntax: TermOpen <name> [<cwd>] [<cmd>]
 
 TermOpen name:
     scenario 1: Go to <name>.
@@ -112,7 +112,7 @@ TermOpen name cmd:
 
 Name: TermClose
 
-Syntax: TermClose[!] [[name=]name]
+Syntax: TermClose[!] [<name>]
 
 TermClose:
     scenario 1: Close last window and delete last buffer, error on failure.
@@ -138,7 +138,7 @@ TermClose! name:
 
 Name: TermMove
 
-Syntax: TermMove [[name=]name] [[position=]position]
+Syntax: TermMove [name=<name>] [position=<position>]
 
 TermMove:
     scenario 1: Move last to current window.
@@ -164,7 +164,7 @@ TermMove name position:
 
 Name: TermEcho
 
-Syntax: TermEcho[!] [[name=]name] cmd
+Syntax: TermEcho[!] [name=<name>] <cmd>
 
 TermEcho cmd:
     scenario 1: Echo in <cmd> to last. Stay in current window.
