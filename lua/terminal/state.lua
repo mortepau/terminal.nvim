@@ -1,50 +1,81 @@
-local error_func = require('terminal.error')
-local util = require('terminal.util')
-local State = {}
+local config = require('terminal.config')
+local error_wrapper = require('terminal.util.error').error_wrapper
+local debug_wrapper = require('terminal.util.error').debug_wrapper
+local table_util = require('terminal.util.table')
 
-local _prototype = {}
+local M = {}
 
-_prototype.template = {
-    name = '',
-    cwd = '',
-    id = -1,
-    bufname = '',
-    cmd = {
-      initial = '',
-      current = '',
-    },
-    position = {
-      initial = '',
-      current = '',
-    },
-    location = {
-      buf = -1,
-      win = -1,
-      tab = -1,
-    },
-    alive = false,
+local _state = {
+  terminals = {},
+  last = nil,
 }
 
-POSITIONS = { 'top', 'bot', 'left', 'right' }
-
-function State.new(name, cwd, position, cmd)
-  assert(type(name) == 'string' and #name > 0, error_func.error_wrapper('Invalid terminal name, expected a non-zero length string not a ' .. type(cwd)))
-  assert(util.type_or_nil(cwd, 'string'), error_func.error_wrapper('Invalid current working directory, expected a string not a ' .. type(cwd)))
-  assert(util.type_or_nil(cmd, 'string'), error_func.error_wrapper('Invalid cmd, expected a string not a ' .. type(cmd)))
-  assert(util.type_or_nil(position, 'string'), error_func.error_wrapper('Invalid position, expected a string not a ' .. type(position)))
-  if type(position) == 'string' then
-    assert(util.in_list(position, POSITIONS), error_func.error_wrapper('Invalid position name, expected one of ' .. util.stringify(POSITIONS) .. ' not ' .. tostring(position)))
+local function debug(msg)
+  if config.get('debug') then
+    debug_wrapper(msg)
   end
-
-  local state = _prototype.template
-
-  state.name = name
-  state.cwd = cwd
-  state.position.initial = position
-  state.cmd.initial = cmd
-
-
-  return state
 end
 
-return State
+local function validate_terminal(terminal)
+  assert(type(terminal) == 'table', error_wrapper('Terminal is not a table'))
+  assert(type(terminal.name) == 'string', error_wrapper('Terminal is missing field: name'))
+  assert(type(terminal.cmd) == 'string', error_wrapper('Terminal is missing field: cmd'))
+  assert(type(terminal.cmd_init) == 'string', error_wrapper('Terminal is missing field: cmd_init'))
+  assert(type(terminal.position) == 'string', error_wrapper('Terminal is missing field: position'))
+  assert(type(terminal.position_init) == 'string', error_wrapper('Terminal is missing field: position_init'))
+  assert(type(terminal.cwd) == 'string', error_wrapper('Terminal is missing field: cwd'))
+  assert(type(terminal.id) == 'number', error_wrapper('Terminal is missing field: id'))
+  assert(type(terminal.buf_name) == 'string', error_wrapper('Terminal is missing field: bufname'))
+  assert(type(terminal.alive) == 'boolean', error_wrapper('Terminal is missing field: alive'))
+  assert(type(terminal.bufnr) == 'number', error_wrapper('Terminal is missing field: bufnr'))
+  assert(type(terminal.win_id) == 'number', error_wrapper('Terminal is missing field: win_id'))
+  assert(type(terminal.tabpage) == 'number', error_wrapper('Terminal is missing field: tabpage'))
+
+  return true
+end
+
+function M.insert_terminal(terminal)
+  if validate_terminal(terminal) then
+    _state.terminals[terminal.name] = terminal
+  end
+end
+
+function M.get_terminal(name)
+  if not name then return vim.tbl_values(_state.terminals) end
+
+  return _state.terminals[name]
+end
+
+function M.get_terminal_from_key(key, value)
+  for _, terminal in pairs(_state.terminals) do
+    if terminal[key] == value then
+      return terminal
+    end
+  end
+end
+
+function M.terminal_exist(name)
+  -- Returns false if key not found, otherwise return true
+  return not not _state.terminals[name]
+end
+
+function M.last_terminal()
+  if _state.last then
+    debug('Fetching the last used terminal, ' .. _state.last)
+    return _state.terminals[_state.last]
+  end
+end
+
+function M.default_terminal()
+  debug('Fetching the default terminal')
+  return _state.terminals[config.get('default_terminal').name]
+end
+
+function M.set_last_terminal(name)
+  if table_util.in_table(name, vim.tbl_keys(_state.terminals)) then
+    debug('Setting the last used terminal to ' .. name)
+    _state.last = name
+  end
+end
+
+return M
