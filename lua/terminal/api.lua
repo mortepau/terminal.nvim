@@ -78,4 +78,42 @@ function M.echo(args)
   print(vim.inspect(args_table))
 end
 
+function M.list(list_all)
+  local format = config.get('list_format')
+  local keys = {
+    'name',
+    'buf_name',
+    'cwd',
+    'cmd',
+    'cmd_init',
+    'position',
+    'position_init',
+    'id',
+    'bufnr',
+    'win_id',
+    'tabpage',
+  }
+
+  local default_terminal = state.default_terminal()
+  local last_terminal = state.last_terminal() or default_terminal
+
+  local lines = {}
+  for _, terminal in pairs(state.get_terminal()) do
+    local template = format
+    for _, key in ipairs(keys) do
+      template = template:gsub('{' .. key .. '}', tostring(terminal[key]))
+    end
+
+    template = template:gsub('{default}', default_terminal.name == terminal.name and 'D' or ' ')
+    template = template:gsub('{last}', last_terminal.name == terminal.name and '*' or ' ')
+    template = template:gsub('{alive}', terminal.alive and 'A' or ' ')
+
+    if terminal.alive or list_all then
+      table.insert(lines, template)
+    end
+  end
+
+  print(table.concat(lines, '\n'))
+end
+
 return M

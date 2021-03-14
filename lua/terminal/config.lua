@@ -6,6 +6,11 @@ local M = {}
 
 -- Table holding the valid keys and their expected type
 M._config_tbl = {
+  -- Debug
+  debug = {
+    type = 'boolean',
+    value = false,
+  },
   -- How to parse the input given to the commands
   -- true  -> --name <name> --position <position> --cwd <cwd> cmd
   -- false -> name=<name> position=<position> cwd=<cwd> cmd
@@ -17,15 +22,19 @@ M._config_tbl = {
   -- working directory
   naming_scheme_handle     = {
     type  = 'function',
-    value = function(name, cwd)
-      M._counter = (M._counter or 0) + 1
-      return 'term://' .. cwd .. '//' .. M._counter .. ':' .. name
+    value = function(terminal)
+      return 'term://' .. vim.fn.expand(terminal.cwd) .. '//' .. terminal.id .. ':' .. terminal.name
     end,
   },
   -- If we should use a custom naming scheme or use the default one
   use_custom_naming_scheme = {
     type  = 'boolean',
     value = false,
+  },
+  -- The format to use when listing all terminals
+  list_format = {
+    type = 'string',
+    value = '{bufnr} {alive}{default}{last} {name} {id} - "{buf_name}"',
   },
   -- If we should define all the commands or only Terminal
   define_all_commands      = {
@@ -60,7 +69,7 @@ local function verify_type(new_value, expected)
     return true
   end
 
-  return type(value) == expected.type
+  return type(new_value) == expected.type
 end
 
 -- Get a config value or error if using an invalid key
