@@ -1,42 +1,128 @@
-local config = require('terminal.config')
-local state = require('terminal.state')
-local terminal_factory = require('terminal.internal')
+local TerminalManager = require('tterminal.manager')
+local config = require('tterminal.config')
+local util = require('tterminal.util')
 
+---@class TerminalNvim @The entry point for Terminal.nvim
 local M = {}
 
-local function create_autocommands()
-  vim.cmd([[augroup Terminal.nvim]])
-  vim.cmd([[  autocmd!]])
-  vim.cmd([[  autocmd TermOpen * call luaeval("require('terminal.autocommand').term_open(_A)", expand('<abuf>'))]])
-  vim.cmd([[  autocmd TermClose * call luaeval("require('terminal.autocommand').term_close(_A)", expand('<abuf>'))]])
-  vim.cmd([[augroup END]])
-end
+--[[
+Available autocmds:
+TermOpen - On opening terminal
+TermClose - On exiting terminal
+TermLeave - On leaving terminal-mode
+TermEnter - On entering terminal-mode
+--]]
 
+---Initialize the plugin and apply user configurations
+---@param opts UserConfig @Configuration provided by the user
 function M.setup(opts)
   opts = opts or {}
-  -- Update the configuration
-  for key, value in pairs(opts) do
-    config.set(key, value)
+  -- Update user configurations
+  config.update(opts)
+end
+
+---Open a terminal
+---@param name string|nil @The terminal instance to open
+---@param position string|nil @The terminal position
+---@param cwd string|nil @The terminal's current working directory
+---@param cmd string|nil @The command to launch
+function M.open(name, position, cwd, cmd)
+  local Terminal = TerminalManager.get(name, true)
+  if not Terminal:is_valid() then
+    util.debug('Terminal "%s" does not exist yet. Creating it.', name)
+    util.debug('Using parameters: position: %s, cwd: %s, cmd: %s',
+      name,
+      Terminal.params.position,
+      Terminal.params.cwd,
+      Terminal.params.cmd
+    )
+    Terminal:create()
+  end
+  if not Terminal:is_open() then
+    local params = {
+      position = position,
+      cwd = cwd,
+      cmd = cmd
+    }
+    Terminal:update(params)
+    Terminal:open()
+  else
+    Terminal:enter()
+  end
+end
+
+---Close the terminal given by name
+---@param name string|nil @The terminal to find, nil closes last terminal
+function M.close(name)
+  local Terminal = TerminalManager.get(name, false)
+  if not Terminal or not util.type(Terminal) == 'terminal' then
+    util.error('No terminal with the name "%s"', name)
+  end
+  if Terminal:is_open() then
+    Terminal:close()
+  end
+end
+
+---Toggle the visibility of the terminal given by name
+---@param name string|nil @The terminal to toggle, uses last if nil
+---@param position Position|nil @The new position to use
+---@param cwd string|nil @The current working directory to use
+---@param cmd string|nil @The command to execute
+function M.toggle(name, position, cwd, cmd)
+  local Terminal = TerminalManager.get(name, true)
+  Terminal:update({ position = position, cwd = cwd, cmd = cmd })
+  if not util.type(Terminal) == 'terminal' then
+    util.error('No terminal with the name "%s"', name)
+    return
   end
 
-  state.insert_terminal(terminal_factory:new(config.get('default_terminal')))
-  -- TODO (mortepau): Fix so that all the terminals have all keys
-  for _, terminal_config in ipairs(opts.terminals or {}) do
-    state.insert_terminal(terminal_factory:new(terminal_config))
+  if Terminal:is_open() then
+    Terminal:close()
+  else
+    Terminal:open()
+  end
+end
+
+---Move the terminal given by name to position
+---@param name string|nil @The terminal to move, uses last terminal if nil
+---@param position Position @The position to move the terminal to
+function M.move(name, position)
+  local Terminal = TerminalManager.get(name, false)
+  if not Terminal or not util.type(Terminal) == 'terminal' then
+    util.error('No terminal with the name "%s"', name)
+    return
   end
 
-  if config.get('define_all_commands') then
-    vim.cmd([=[command! -nargs=? TermOpen call luaeval('require("terminal.api").open(_A)', <f-args>)]=])
-    vim.cmd([=[command! -nargs=? TermClose call luaeval('require("terminal.api").close(_A)', <f-args>)]=])
-    vim.cmd([=[command! -nargs=? TermMove call luaeval('require("terminal.api").move(_A)', <f-args>)]=])
-    vim.cmd([=[command! -nargs=? TermEcho call luaeval('require("terminal.api").echo(_A)', <f-args>)]=])
+  if not position then
+    util.error('Required parameter missing: "position"')
+    return
   end
 
-  -- TODO (mortepau): Add completelist for external commands
-  vim.cmd([=[command! -nargs=? Terminal call luaeval('require("terminal.api").execute(_A)', <f-args>)]=])
-  vim.cmd([=[command! -nargs=0 -bang TermList call luaeval('require("terminal.api").list(_A == 1)', <bang>0)]=])
+  Terminal:update({ position = position })
+  if Terminal:is_open() then
+    Terminal:close()
+  end
+  Terminal:open()
+end
 
-  create_autocommands()
+---Execute the command cmd in the terminal given by name
+---@param name string|nil @The terminal to use, uses last terminal if nil
+---@param cmd string @The command to execute
+function M.echo(name, cmd)
+  local Terminal = TerminalManager.get(name, false)
+  if not Terminal or not util.type(Terminal) == 'terminal' then
+    util.error('No terminal with the name "%s"', name)
+    return
+  end
+
+  if not cmd then
+    util.error('Required parameter missing: "cmd"')
+    return
+  end
+
+  if Terminal:is_valid() then
+    Terminal:echo(cmd)
+  end
 end
 
 return M

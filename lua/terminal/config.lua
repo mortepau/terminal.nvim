@@ -1,96 +1,42 @@
-local util = require('terminal.util')
-local in_table = require('terminal.util.table').in_table
-local error_wrapper = require('terminal.util.error').error_wrapper
-
+---@class ConfigWrapper @Wrapper for accessing the terminal.nvim configuration
 local M = {}
 
--- Table holding the valid keys and their expected type
-M._config_tbl = {
-  -- Debug
-  debug = {
-    type = 'boolean',
-    value = false,
-  },
-  -- How to parse the input given to the commands
-  -- true  -> --name <name> --position <position> --cwd <cwd> cmd
-  -- false -> name=<name> position=<position> cwd=<cwd> cmd
-  use_cli_style_input      = { 
-    type  = 'boolean',
-    value = false,
-  },
-  -- Function to provide a new terminal name given a name and the current
-  -- working directory
-  naming_scheme_handle     = {
-    type  = 'function',
-    value = function(terminal)
-      return 'term://' .. vim.fn.expand(terminal.cwd) .. '//' .. terminal.id .. ':' .. terminal.name
-    end,
-  },
-  -- If we should use a custom naming scheme or use the default one
-  use_custom_naming_scheme = {
-    type  = 'boolean',
-    value = false,
-  },
-  -- The format to use when listing all terminals
-  list_format = {
-    type = 'string',
-    value = '{bufnr} {alive}{default}{last} {name} {id} - "{buf_name}"',
-  },
-  -- If we should define all the commands or only Terminal
-  define_all_commands      = {
-    type  = 'boolean',
-    value = true,
-  },
-  -- The default terminal if nothing is specified in the call
-  default_terminal         = {
-    type = 'table', 
-    keys = {
-      name     = 'string',
-      cwd      = 'string',
-      position = 'string',
-      cmd      = 'string',
-    },
-    value = {
-      name     = 'default',
-      cwd      = vim.fn.getcwd(),
-      position = 'current',
-      cmd      = vim.fn.expand('$SHELL')
-    },
-  },
+---@alias LogLevel "'fatal'" | "'error'" | "'warn'" | "'info'" | "'debug'" | "'trace'"
+
+---@class UserConfig @Terminal.nvim configuration
+---@field public startinsert boolean @Enter terminal-mode when entering terminal window
+---@field public enter_on_open boolean @Move cursor to terminal on open
+---@field public list boolean @List the terminal buffer
+---@field public debug_level LogLevel @Log level
+local default = {
+  startinsert = true,
+  enter_on_open = true,
+  list = false,
+  debug_level = 'trace',
 }
 
-local function verify_type(new_value, expected)
-  if type(new_value) == expected.type and expected.type == 'table' then
-    for expected_key, expected_value in pairs(expected.keys) do
-      if not util.type_or_nil(new_value[expected_key], expected_value) then
-        return false
-      end
-    end
-    return true
-  end
+local config = {}
 
-  return type(new_value) == expected.type
-end
-
--- Get a config value or error if using an invalid key
+---Get a value from the config
+---@param key string @The value to find
+---@return any
 function M.get(key)
-  if in_table(key, vim.tbl_keys(M._config_tbl)) then
-    return M._config_tbl[key].value
+  if config[key] ~= nil then
+    return config[key]
   end
-  error_wrapper('Invalid configuration option')
 end
 
--- Set a config value if the config key is valid
-function M.set(key, value)
-  if in_table(key, vim.tbl_keys(M._config_tbl)) and verify_type(value, M._config_tbl[key]) then
-    if type(value) == 'table' then
-      for k, v in pairs(M._config_tbl[key].value) do
-        M._config_tbl[key].value[k] = value[k] or v
-      end
-    else
-      M._config_tbl[key].value = value
-    end
-  end
+---Update the config with new values
+---@param new_config UserConfig @The new config values
+function M.update(new_config)
+  config = vim.tbl_deep_extend(
+    'force',
+    vim.deepcopy(default),
+    config,
+    new_config
+  )
 end
+
+M.update({})
 
 return M
