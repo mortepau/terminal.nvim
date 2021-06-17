@@ -1,18 +1,29 @@
 ---@class ConfigWrapper @Wrapper for accessing the terminal.nvim configuration
 local M = {}
 
----@alias LogLevel "'fatal'" | "'error'" | "'warn'" | "'info'" | "'debug'" | "'trace'"
+---@alias LogLevel "'fatal'" | "'error'" | "'warn'" | "'info'" | "'debug'"
 
 ---@class UserConfig @Terminal.nvim configuration
 ---@field public startinsert boolean @Enter terminal-mode when entering terminal window
 ---@field public enter_on_open boolean @Move cursor to terminal on open
 ---@field public list boolean @List the terminal buffer
 ---@field public debug_level LogLevel @Log level
+---@field public default_params TerminalUserParams @The default terminal
+---@field public terminals TerminalUserParams[] @List of terminals to define as default
 local default = {
   startinsert = true,
   enter_on_open = true,
   list = false,
-  debug_level = 'trace',
+  debug_level = 'error',
+  default_params = {
+    name = 'default',
+    position = 'current',
+    cwd = '.',
+    cmd = vim.fn.expand('$SHELL'),
+    env = {},
+    clear_env = false,
+  },
+  terminals = {},
 }
 
 local config = {}

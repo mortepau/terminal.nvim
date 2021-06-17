@@ -8,3 +8,35 @@ if exists('g:loaded_terminal')
 endif
 let g:loaded_terminal = v:true
 
+function! s:list() abort
+endfunction
+
+function! s:named_completion(...)
+    return luaeval('require("terminal.api").named_completion(_A)', a:000)
+endfunction
+
+function! s:positional_completion(...)
+    return luaeval('require("terminal.api").positional_completion(_A)', a:000)
+endfunction
+
+function! s:named_call(command, ...)
+    call luaeval('require("terminal.api").named_call(_A)', [a:command, a:000])
+endfunction
+
+function! s:positional_call(command, ...)
+    call luaeval('require("terminal.api").positional_call(_A)', [a:command, a:000])
+endfunction
+
+augroup TerminalNvim
+    autocmd! BufEnter * lua require('terminal.manager').update_last(true)
+    autocmd! BufLeave * lua require('terminal.manager').update_last(false)
+augroup END
+
+command! -nargs=* -complete=customlist,s:named_completion Terminal call s:named_call('open', <f-args>)
+command! -nargs=* -complete=customlist,s:named_completion TermOpen call s:named_call('open', <f-args>)
+command! -nargs=* -complete=customlist,s:named_completion TermToggle call s:named_call('toggle', <f-args>)
+command! -nargs=* -complete=customlist,s:unnamed_completion TermClose call s:positional_call('close', <f-args>)
+command! -nargs=+ -complete=customlist,s:unnamed_completion TermMove call s:positional_call('move', <f-args>)
+command! -nargs=+ -complete=customlist,s:unnamed_completion TermEcho call s:positional_call('echo', <f-args>)
+command! -nargs=* -complete=customlist,s:unnamed_completion TermExit call s:positional_call('exit', <f-args>)
+command! -nargs=0 -bang TermList call s:list(<bang>0)

@@ -49,7 +49,7 @@ function M.float(terminal)
   local win_params = {
     relative = 'editor',
     width = math.floor(0.9 * vim.opt.columns:get()),
-    height = math.floor(0.9 * vim.opt.lines:get()),
+    height = math.floor(0.8 * vim.opt.lines:get()),
     row = 0.05 * vim.opt.lines:get(),
     col = 0.05 * vim.opt.columns:get(),
     style = 'minimal',

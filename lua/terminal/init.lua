@@ -1,17 +1,10 @@
-local TerminalManager = require('tterminal.manager')
-local config = require('tterminal.config')
-local util = require('tterminal.util')
+local TerminalManager = require('terminal.manager')
+local config = require('terminal.config')
+local util = require('terminal.util')
 
 ---@class TerminalNvim @The entry point for Terminal.nvim
 local M = {}
 
---[[
-Available autocmds:
-TermOpen - On opening terminal
-TermClose - On exiting terminal
-TermLeave - On leaving terminal-mode
-TermEnter - On entering terminal-mode
---]]
 
 ---Initialize the plugin and apply user configurations
 ---@param opts UserConfig @Configuration provided by the user
@@ -19,37 +12,50 @@ function M.setup(opts)
   opts = opts or {}
   -- Update user configurations
   config.update(opts)
+  local terminal = TerminalManager.get(config.get('default_params').name, true)
+  terminal.last = true
+  for _, params in ipairs(config.get('terminals')) do
+    terminal = TerminalManager.get(params.name, true)
+    terminal:update(params)
+  end
 end
 
----Open a terminal
+
+---Open a terminal using the parameters passed
 ---@param name string|nil @The terminal instance to open
 ---@param position string|nil @The terminal position
 ---@param cwd string|nil @The terminal's current working directory
 ---@param cmd string|nil @The command to launch
 function M.open(name, position, cwd, cmd)
+  -- Fetch the terminal given by name, create if not found
   local Terminal = TerminalManager.get(name, true)
+  local params = {
+    position = position,
+    cwd = cwd,
+    cmd = cmd
+  }
+  -- Update the terminal parameters
+  Terminal:update(params)
   if not Terminal:is_valid() then
-    util.debug('Terminal "%s" does not exist yet. Creating it.', name)
-    util.debug('Using parameters: position: %s, cwd: %s, cmd: %s',
-      name,
+    util.debug('Terminal "%s" does not exist yet. Creating it.', Terminal.params.name)
+    util.debug('Using parameters: name: %s, position: %s, cwd: %s, cmd: %s',
+      Terminal.params.name,
       Terminal.params.position,
       Terminal.params.cwd,
       Terminal.params.cmd
     )
+    -- Create the terminal buffer as it is invalid
     Terminal:create()
   end
   if not Terminal:is_open() then
-    local params = {
-      position = position,
-      cwd = cwd,
-      cmd = cmd
-    }
-    Terminal:update(params)
+    -- Open the terminal window
     Terminal:open()
   else
+    -- Called when already open, enter terminal instead then
     Terminal:enter()
   end
 end
+
 
 ---Close the terminal given by name
 ---@param name string|nil @The terminal to find, nil closes last terminal
@@ -62,6 +68,7 @@ function M.close(name)
     Terminal:close()
   end
 end
+
 
 ---Toggle the visibility of the terminal given by name
 ---@param name string|nil @The terminal to toggle, uses last if nil
@@ -82,6 +89,7 @@ function M.toggle(name, position, cwd, cmd)
     Terminal:open()
   end
 end
+
 
 ---Move the terminal given by name to position
 ---@param name string|nil @The terminal to move, uses last terminal if nil
@@ -105,6 +113,7 @@ function M.move(name, position)
   Terminal:open()
 end
 
+
 ---Execute the command cmd in the terminal given by name
 ---@param name string|nil @The terminal to use, uses last terminal if nil
 ---@param cmd string @The command to execute
@@ -123,6 +132,19 @@ function M.echo(name, cmd)
   if Terminal:is_valid() then
     Terminal:echo(cmd)
   end
+end
+
+
+---Exit the terminal given by name
+---@param name string @The terminal to exit
+function M.exit(name)
+  local Terminal = TerminalManager.get(name, false)
+  if not Terminal or not util.type(Terminal) == 'terminal' then
+    util.error('No terminal with the name "%s"', name)
+    return
+  end
+
+  Terminal:exit()
 end
 
 return M

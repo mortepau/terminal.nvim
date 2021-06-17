@@ -1,6 +1,6 @@
-local config = require('tterminal.config')
-local util = require('tterminal.util')
-local posfuncs = require('tterminal.position_commands')
+local config = require('terminal.config')
+local util = require('terminal.util')
+local posfuncs = require('terminal.position_commands')
 
 ---@alias Position "'current'" | "'float'" | "'tab'" | "'top'" | "'bot'" | "'right'" | "'left'" | "'above'" | "'below'" | "'rhs'" | "'lhs'"
 
@@ -9,6 +9,8 @@ local posfuncs = require('tterminal.position_commands')
 ---@field public position Position @The terminal position
 ---@field public cwd string @The terminal's current working directory
 ---@field public cmd string @The terminal's initial or last echoed command
+---@field public env table<string, string> @Environment variables to include
+---@field public clear_env boolean @`env` defines the terminal environment exactly
 
 ---@class TerminalParams @Table of terminal parameters
 ---@field public params TerminalUserParams @The user provided parameters
@@ -25,6 +27,7 @@ local posfuncs = require('tterminal.position_commands')
 ---@field private buf number|nil @The terminal buffer
 ---@field private jobid number|nil @The terminal channel job id
 ---@field private exist boolean @The terminal is not exited
+---@field private last boolean @The last used terminal
 local Terminal = {}
 Terminal.__index = Terminal
 setmetatable(Terminal, {
@@ -66,6 +69,7 @@ local JOB_ERROR = {
   [-1] = '%s is not executable'
 }
 
+
 ---Create a new terminal instance
 ---@param name string|nil @The name of the new terminal
 ---@param params TerminalUserParams|nil @Parameters for the terminal
@@ -82,26 +86,40 @@ function Terminal.new(name, params)
   end
 
   local self = setmetatable(default(), Terminal)
-  self:update(params or {})
+  self:update(vim.tbl_extend('keep', { name = name }, params or {}))
 
   return self
 end
+
 
 ---Create the terminal buffer and set additional configurations
 function Terminal:create()
   local listed = config.get('list')
   self.buf = vim.api.nvim_create_buf(listed, true)
-  local job_id = vim.api.nvim_buf_call(
+  local jobid = vim.api.nvim_buf_call(
     self.buf,
-    function() return vim.fn.termopen(self.params.cmd) end
+    function()
+      -- TODO(mortepau): Consider the use case for on_stdout, on_stderr, and on_exit
+      local term_params = {
+        cwd = self.params.cwd,
+        env = self.params.env,
+        clear_env = self.params.clear_env,
+        detach = false,
+        rpc = false,
+      }
+      return vim.fn.termopen(self.params.cmd, term_params)
+    end
   )
 
-  if JOB_ERROR[job_id] then
-    util.error(JOB_ERROR[job_id], self.params.cmd)
+  if JOB_ERROR[jobid] then
+    util.error(JOB_ERROR[jobid], self.params.cmd)
     return
+  else
+    self.jobid = jobid
   end
   self.exist = true
 end
+
 
 ---Open a window with the terminal buffer
 function Terminal:open()
@@ -120,17 +138,26 @@ function Terminal:open()
   end
 end
 
+
 ---Close the window with the terminal buffer
 function Terminal:close()
   if self:is_valid() and self:is_open() then
+    if #vim.api.nvim_list_wins() == 1 then
+      vim.cmd('new')
+    end
     vim.api.nvim_win_close(self.win, true)
   end
 end
 
+
 ---Exit the terminal buffer and delete it
 function Terminal:exit()
   if self:is_valid() then
-    vim.api.nvim_chan_send(self.jobid, vim.api.nvim_replace_termcodes('exit<CR>', true, true, true))
+    -- TODO(mortepau): Allow user defined exit commands?
+    vim.api.nvim_chan_send(
+      self.jobid,
+      vim.api.nvim_replace_termcodes('exit<CR>', true, true, true)
+    )
   end
 end
 
@@ -143,6 +170,7 @@ function Terminal:enter()
   end
 end
 
+
 ---Echo a command to the terminal
 ---@param cmd string @The command to execute
 function Terminal:echo(cmd)
@@ -150,11 +178,13 @@ function Terminal:echo(cmd)
   vim.api.nvim_chan_send(self.jobid, formatted_cmd)
 end
 
+
 ---Update the user parameters
 ---@param params TerminalUserParams @The new parameters
 function Terminal:update(params)
   self.params = vim.tbl_extend('force', default().params, self.params, params)
 end
+
 
 ---Check if the terminal is visible in a window
 ---@return boolean
@@ -169,6 +199,7 @@ function Terminal:is_open()
   end
   return false
 end
+
 
 ---Check if the terminal exist
 ---@return boolean

@@ -1,4 +1,4 @@
-local config = require('tterminal.config')
+local config = require('terminal.config')
 
 ---@class Utility @Utility functionality for Terminal.nvim
 local M = {}
@@ -17,10 +17,9 @@ end
 ---@return number
 local function level_to_number(level)
   local levels = {
-    trace = 6,
     debug = 5,
-    info = 4,
-    warn = 3,
+    info  = 4,
+    warn  = 3,
     error = 2,
     fatal = 1,
   }
@@ -33,14 +32,14 @@ end
 ---@vararg any @The variables to give to template
 local function logger(level, template, ...)
   local config_level = level_to_number(config.get('debug_level'))
-  if level <= config_level then
+  if level <= level_to_number('error') then
+    error(debug.traceback(
+      '[Terminal.nvim] ' .. string.format(template, ...)
+    ))
+  elseif level <= config_level then
     print('[Terminal.nvim]', string.format(template, ...))
   end
 end
-
----Print with log level trace
----@vararg any @The content to print
-function M.trace(...) logger(6, ...) end
 
 ---Print with log level debug
 ---@vararg any @The content to print
@@ -54,11 +53,11 @@ function M.info(...) logger(4, ...) end
 ---@vararg any @The content to print
 function M.warn(...) logger(3, ...) end
 
----Print with log level error
+---Print with log level error, and error
 ---@vararg any @The content to print
 function M.error(...) logger(2, ...) end
 
----Print with log level fatal
+---Print with log level fatal, and error
 ---@vararg any @The content to print
 function M.fatal(...) logger(1, ...) end
 
