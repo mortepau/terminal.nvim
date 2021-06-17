@@ -8,7 +8,8 @@ if exists('g:loaded_terminal')
 endif
 let g:loaded_terminal = v:true
 
-function! s:list() abort
+function! s:list(bang) abort
+    call luaeval('require("terminal.api").list_show(_A)', a:bang)
 endfunction
 
 function! s:named_completion(...)

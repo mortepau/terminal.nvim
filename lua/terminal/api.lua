@@ -155,4 +155,63 @@ function M.positional_call(...)
   main[command](unpack(args))
 end
 
+function M.list_show(show_invalid)
+  local terminals = TerminalManager.available()
+  if not show_invalid then
+    terminals = vim.tbl_filter(
+      function(term) return term:is_valid() end,
+      terminals
+    )
+  end
+  local buf = vim.api.nvim_create_buf(false, true)
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = 'editor',
+    width = math.floor(0.5 * vim.opt.columns:get()),
+    height = #terminals,
+    row = 0.5 * vim.opt.lines:get() - #terminals,
+    col = 0.25 * vim.opt.columns:get(),
+    focusable = true,
+    style = 'minimal',
+    border = 'single',
+  })
+  vim.api.nvim_buf_set_lines(buf, 0, #terminals-1, false, terminals)
+
+  vim.cmd(string.format(
+    [[autocmd! BufLeave <buffer=%d> lua require('terminal.api').list_close(%d, %d)]],
+    buf, buf, win
+  ))
+
+  for _, mapping in ipairs({'<Esc>', 'gq' }) do
+    vim.api.nvim_buf_set_keymap(
+      buf,
+      'n',
+      mapping,
+      string.format(':lua require("terminal.api").list_close(%d, %d)<CR>', buf, win),
+      { noremap = true, silent = true }
+    )
+  end
+  vim.api.nvim_buf_set_keymap(
+    buf,
+    'n',
+    '<CR>',
+    string.format(':lua require("terminal.api").list_enter(%d, %d)<CR>', buf, win),
+    { noremap = true, silent = true }
+  )
+end
+
+function M.list_close(buf, win)
+  if vim.api.nvim_win_is_valid(win) then
+    vim.api.nvim_win_close(win, true)
+  end
+  if vim.api.nvim_buf_is_valid(buf) then
+    vim.api.nvim_buf_delete(buf, { force = true })
+  end
+end
+
+function M.list_enter(buf, win)
+  local line = vim.api.nvim_get_current_line()
+  require('terminal').open(line, 'current')
+  M.list_close(buf, win)
+end
+
 return M
