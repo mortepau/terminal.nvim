@@ -9,7 +9,8 @@ local M = {}
 local function dirs(dir)
   local directories = {}
   dir = dir ~= '' and dir or '.'
-  local dir_lstat = vim.loop.fs_lstat(dir)
+  local dir_expanded = vim.fn.fnamemodify(vim.fn.expand(dir), ':p')
+  local dir_lstat = vim.loop.fs_lstat(dir_expanded)
 
   -- Return early if invalid directory
   if not dir_lstat then return directories end
@@ -17,7 +18,7 @@ local function dirs(dir)
 
   local suffix = dir:sub(-1, -1) == '/' and '' or '/'
   local files = vim.loop.fs_readdir(
-    vim.loop.fs_opendir(dir, nil, 100)
+    vim.loop.fs_opendir(dir_expanded, nil, 100)
   )
   for _, file in ipairs(files) do
     if file.type == 'directory' then
