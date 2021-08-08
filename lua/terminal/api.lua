@@ -137,6 +137,7 @@ function M.positional_completion(...)
     arglead,
     to_list(
       choices[command][#cmdline_split - 1],
+      arglead,
       choices[command]
     )
   )
