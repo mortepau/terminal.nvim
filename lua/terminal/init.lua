@@ -5,6 +5,12 @@ local util = require('terminal.util')
 ---@class TerminalNvim @The entry point for Terminal.nvim
 local M = {}
 
+---@class Params
+---@field public name string|nil @The terminal instance to use
+---@field public position string|nil @The terminal position
+---@field public cwd string|nil @The current working directory
+---@field public cmd string|nil @The command to execute
+
 
 ---Initialize the plugin and apply user configurations
 ---@param opts UserConfig @Configuration provided by the user
@@ -22,18 +28,12 @@ end
 
 
 ---Open a terminal using the parameters passed
----@param name string|nil @The terminal instance to open
----@param position string|nil @The terminal position
----@param cwd string|nil @The terminal's current working directory
----@param cmd string|nil @The command to launch
-function M.open(name, position, cwd, cmd)
+---@param params Params @The terminal parameters
+function M.open(params)
   -- Fetch the terminal given by name, create if not found
+  local name = params.name
   local Terminal = TerminalManager.get(name, true)
-  local params = {
-    position = position,
-    cwd = cwd,
-    cmd = cmd
-  }
+
   -- Update the terminal parameters
   Terminal:update(params)
   if not Terminal:is_valid() then
@@ -71,13 +71,11 @@ end
 
 
 ---Toggle the visibility of the terminal given by name
----@param name string|nil @The terminal to toggle, uses last if nil
----@param position Position|nil @The new position to use
----@param cwd string|nil @The current working directory to use
----@param cmd string|nil @The command to execute
-function M.toggle(name, position, cwd, cmd)
+---@param params Params @The terminal parameters
+function M.toggle(params)
+  local name = params.name
   local Terminal = TerminalManager.get(name, true)
-  Terminal:update({ position = position, cwd = cwd, cmd = cmd })
+  Terminal:update(params)
   if not util.type(Terminal) == 'terminal' then
     util.error('No terminal with the name "%s"', name)
     return

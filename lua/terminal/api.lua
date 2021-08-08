@@ -66,7 +66,7 @@ end
 
 ---Parse the given arguments
 ---@param args string[] @The user provided arguments to the command
----@return string[] @The parsed arguments. { name, position, cwd, cmd }
+---@return Params @The parsed arguments.
 local function parse_args(args)
   local name, position, cwd, cmd
   for _, arg in ipairs(args) do
@@ -87,7 +87,12 @@ local function parse_args(args)
     end
   end
 
-  return { name, position, cwd, cmd }
+  return {
+    name = name,
+    position = position,
+    cwd = cwd,
+    cmd = cmd,
+  }
 end
 
 ---Command name to allowed completion keys
@@ -147,14 +152,15 @@ end
 ---@vararg string[] @The provided arguments
 function M.named_call(...)
   local command, args  = unpack(...)
-  main[command](unpack(parse_args(args)))
+  main[command](parse_args(args))
 end
 
 ---Call a command with positional parameters
 ---@vararg string[] @The provided arguments
 function M.positional_call(...)
   local command, args = unpack(...)
-  main[command](unpack(args))
+  print(vim.inspect(parse_args(args)))
+  main[command](parse_args(args))
 end
 
 function M.list_show(show_invalid)
