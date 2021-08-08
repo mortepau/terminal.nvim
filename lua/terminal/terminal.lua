@@ -106,6 +106,7 @@ function Terminal:create()
         clear_env = self.params.clear_env,
         detach = false,
         rpc = false,
+        on_exit = function() self.exist = false end,
       }
       return vim.fn.termopen(self.params.cmd, term_params)
     end
@@ -130,7 +131,9 @@ function Terminal:open()
       util.error('Invalid position "%s"', self.params.position)
       return
     end
-    posfuncs[self.params.position](self)
+    if vim.api.nvim_buf_is_valid(self.buf) then
+      posfuncs[self.params.position](self)
+    end
   end
 
   if config.get('enter_on_open') then
